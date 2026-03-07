@@ -39,16 +39,12 @@ def get_files_info(working_directory, directory="."):
 
             items_info.append(f"- {item}: file_size={file_size} bytes, is_dir={is_dir}")
 
+        return "\n".join(items_info)
+
     except ValueError:
         return f"Error: os.path.commonpath([{working_dir_abs}, {target_dir}]) failed and raised a ValueError"
     except OSError:
         return f"Error: os.path.getsize(<item>) failed and raised a OSError"
     
-
-    return "\n".join(items_info)
-
-
-        
-
 
 

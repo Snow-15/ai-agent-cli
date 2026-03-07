@@ -1,19 +1,12 @@
-import os
-from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-from prompts import system_prompt
+import sys
 import argparse
-from call_function import available_functions, call_function
 
+from google.genai import types
 
-load_dotenv()
-api_key = os.environ.get("GEMINI_API_KEY")
+from ai_client import generate_response
+from call_function import get_function_responses
+from config import MAX_ITERS
 
-if api_key is None:
-    raise RuntimeError("Gemini API Key wasn't found")
-
-client = genai.Client(api_key=api_key)
 
 def main():
     parser = argparse.ArgumentParser(description="Chatbot")
@@ -23,46 +16,31 @@ def main():
 
     messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions],
-            system_instruction=system_prompt,
-            temperature=0,
-        ),
-    )
+    for _ in range(MAX_ITERS):
+        response = generate_response(messages)
 
-    if response.usage_metadata is None:
-        raise RuntimeError("API request failed")
-    
-    if args.verbose:
-        print(f"User prompt: {args.user_prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+        if response.candidates:
+            for candidate in response.candidates:
+                messages.append(candidate.content)
 
-    if response.function_calls:
-        function_results = []
+        if response.usage_metadata is None:
+            raise RuntimeError("API request failed")
+        
+        if args.verbose:
+            print(f"User prompt: {args.user_prompt}")
+            print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+            print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
-        for function_call in response.function_calls:
-            function_call_result = call_function(function_call, verbose=args.verbose)
+        if response.function_calls:
+            function_results = get_function_responses(response.function_calls, verbose=args.verbose)
+        else:
+            print(f"Response:\n{response.text}")
+            return
 
-            if not function_call_result.parts:
-                raise Exception("The function call result should have a non-empty '.parts' list")
+        messages.append(types.Content(role="user", parts=function_results))
 
-            if not function_call_result.parts[0].function_response:
-                raise Exception("The '.parts' list  should have a FunctionResponse object")
-
-            if not function_call_result.parts[0].function_response.response:
-                raise Exception("The FunctionResponse object should have a response")
-
-            function_results.append(function_call_result.parts[0])
-
-            if args.verbose:
-                print(f"-> {function_call_result.parts[0].function_response.response}")
-
-    else:
-        print(f"Response:\n{response.text}")
+    print(f"Error: Maximum iterations has been reached and the model still hasn't produced a final response")
+    sys.exit(1)
 
 
 if __name__ == "__main__":

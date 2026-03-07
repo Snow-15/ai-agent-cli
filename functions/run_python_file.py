@@ -14,7 +14,7 @@ schema_run_python_file = types.FunctionDeclaration(
             ),
             "args": types.Schema(
                 type=types.Type.ARRAY,
-                description="A list of command-line arguments to pass to the Python script (default is None)",
+                description="A list of command-line arguments to pass to the script. Must be a list of strings, e.g. ['3 + 7 * 2']. Do not pass a plain string.",
                 items=types.Schema(
                     type=types.Type.STRING,
                 ),
@@ -67,10 +67,8 @@ def run_python_file(working_directory, file_path, args=None):
         if not(command_result.stdout or command_result.stderr):
             result += f"No output produced\n"
 
+        return result
 
     except Exception as e:
         return f'Error: executing Python file: {e}'
-
-    return result
-
 

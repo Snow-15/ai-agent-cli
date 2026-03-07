@@ -23,9 +23,9 @@ function_map = {
 def call_function(function_call, verbose=False):
 
     if verbose:
-        print(f"Calling function: {function_call.name}({function_call.args})")
+        print(f" - Calling function: {function_call.name}({function_call.args})")
     else:
-        print(f"Calling function: {function_call.name}")
+        print(f" - Calling function: {function_call.name}")
 
 
     function_name = function_call.name or ""
@@ -56,4 +56,27 @@ def call_function(function_call, verbose=False):
             ),
         ],
     )
+
+
+def get_function_responses(function_calls, verbose=False):
+    function_results = []
+
+    for function_call in function_calls:
+        function_call_result = call_function(function_call, verbose=verbose)
+
+        if not function_call_result.parts:
+            raise Exception("The function call result should have a non-empty '.parts' list")
+
+        if not function_call_result.parts[0].function_response:
+            raise Exception("The '.parts' list  should have a FunctionResponse object")
+
+        if not function_call_result.parts[0].function_response.response:
+            raise Exception("The FunctionResponse object should have a response")
+
+        function_results.append(function_call_result.parts[0])
+
+        if verbose:
+            print(f"-> {function_call_result.parts[0].function_response.response}")
+
+    return function_results
 
