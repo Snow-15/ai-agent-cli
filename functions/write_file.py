@@ -41,12 +41,13 @@ def write_file(working_directory, file_path, content):
         with open(target_file, "w") as f:
             f.write(content)
 
+        return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
+
     except ValueError:
         return f"Error: os.path.commonpath([{working_dir_abs}, {target_file}]) failed and raised a ValueError"
     except OSError:
         return f"Error: open({target_file}, 'w') failed and raised a OSError"
 
-    return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
 
 
 

@@ -42,10 +42,11 @@ def get_file_content(working_directory, file_path):
             if f.read(1):
                 content += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
 
+        return content
+
     except ValueError:
         return f"Error: os.path.commonpath([{working_dir_abs}, {target_file}]) failed and raised a ValueError"
     except OSError:
         return f"Error: open({target_file}, 'r') failed and raised a OSError"
 
     
-    return content
